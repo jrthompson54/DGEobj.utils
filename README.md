@@ -1,1 +1,1 @@
-# DGEobj.util
+# DGEobj.utils
