@@ -1,0 +1,46 @@
+Package: DGEobj.utils
+Type:    Package
+Title:   Differential Gene Expression (DGE) Analysis Utility Toolkit
+Version: 1.0.3
+Description:
+    Provides a function toolkit to facilitate reproducible RNA-Seq Differential Gene Expression (DGE)
+    analysis (Law (2015) <doi:10.12688/f1000research.9005.3>).  The tools include both analysis 
+    work-flow and utility functions: mapping/unit conversion, count normalization, accounting for 
+    unknown covariates, and more.  This is a complement/cohort to the 'DGEobj' package that 
+    provides a flexible container to manage and annotate Differential Gene Expression analysis results.
+Authors@R:
+    c(person("John", "Thompson", role = "aut", email = "jrt@thompsonclan.org"),
+      person("Connie", "Brett",  role = c("aut", "cre"), email = "connie@aggregate-genius.com"),
+      person("Isaac", "Neuhaus", role = "aut", email = "isaac.neuhaus@bms.com"),
+      person("Ryan", "Thompson", role = "aut", email = "rct@thompsonclan.org"))
+Depends:  R (>= 3.5.0)
+License:  GPL-3
+Language: en-US
+Encoding: UTF-8
+Imports:
+    assertthat,
+    DGEobj  (>= 1.0.3),
+    dplyr,
+    statmod,
+    stats,
+    stringr,
+    tidyr,
+    edgeR,
+    IHW,
+    limma,
+    qvalue,
+    RNASeqPower,
+    sva,
+    zFPKM
+Suggests:
+    canvasXpress,
+    conflicted, 
+    glue,
+    ggplot2,
+    knitr,
+    rmarkdown,
+    testthat,
+    biomaRt
+biocViews:
+RoxygenNote: 7.1.1
+VignetteBuilder: knitr

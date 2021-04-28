@@ -1,0 +1,26 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+r:
+  - oldrel
+  - release
+  - devel
+cache: packages
+bioc_packages:
+  - edgeR
+  - IHW
+  - limma
+  - qvalue
+  - RNASeqPower
+  - sva
+  - zFPKM
+  - biomaRt
+r_packages:
+  - covr
+if: |
+  branch IN (master, cran) AND \
+  repo = cb4ds/DGEobj.utils
+after_success:
+  - Rscript -e 'library(covr); codecov(quiet = FALSE)'
+latex: false
+
