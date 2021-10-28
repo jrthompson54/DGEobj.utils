@@ -3,8 +3,8 @@
 <!-- badges: start -->
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/DGEobj.utils?color=9bc2cf)](https://cran.r-project.org/package=DGEobj.utils) 
 [![CRAN_Downloads_Badge](https://cranlogs.r-pkg.org/badges/grand-total/DGEobj.utils?color=9bc2cf)](https://cran.r-project.org/package=DGEobj.utils) 
-[![Travis build status](https://travis-ci.com/cb4ds/DGEobj.utils.svg?branch=master)](https://travis-ci.com/cb4ds/DGEobj.utils?branch=master)
-[![Codecov test coverage](https://codecov.io/gh/cb4ds/DGEobj.utils/branch/master/graph/badge.svg)](https://codecov.io/gh/cb4ds/DGEobj.utils?branch=master)
+[![Travis build status](https://app.travis-ci.com/cb4ds/DGEobj.utils.svg?branch=master)](https://app.travis-ci.com/cb4ds/DGEobj.utils?branch=master)
+[![Codecov test coverage](https://app.codecov.io/gh/cb4ds/DGEobj.utils/branch/master/graph/badge.svg)](https://app.codecov.io/gh/cb4ds/DGEobj.utils?branch=master)
 <!-- badges: end -->
 
 This package implements a set of utility functions to enable a limma/voom workflow capturing

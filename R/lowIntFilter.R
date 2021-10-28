@@ -38,7 +38,6 @@
 #'
 #' @importFrom assertthat assert_that
 #' @importFrom DGEobj getItem
-#' @importFrom zFPKM zFPKM
 #' @importFrom stringr str_c
 #' @importFrom stats complete.cases
 #'
@@ -50,8 +49,7 @@ lowIntFilter <- function(dgeObj,
                          tpmThreshold,
                          sampleFraction = 0.5,
                          geneLength,
-                         verbose = FALSE)
-{
+                         verbose = FALSE) {
     assertthat::assert_that(!missing(dgeObj),
                             !is.null(dgeObj),
                             "DGEobj" %in% class(dgeObj),
@@ -66,7 +64,7 @@ lowIntFilter <- function(dgeObj,
     if (any(is.null(sampleFraction),
             !is.numeric(sampleFraction),
             length(sampleFraction) != 1)) {
-        warning("sampleFraction must be a singular numeic value. Assigning default value 0.5")
+        warning("sampleFraction must be a singular numeric value. Assigning default value 0.5")
         sampleFraction = 0.5
     }
 
@@ -86,33 +84,38 @@ lowIntFilter <- function(dgeObj,
 
     # Apply zFPKM threshold
     if (!missing(zfpkmThreshold)) {
-        assertthat::assert_that(!is.null(geneLength),
-                                length(geneLength) == nrow(dgeObj$counts),
-                                msg = "geneLength must be specified and should be the same length as the number of rows in dgeObj's counts.")
-        fpkm <- convertCounts(dgeObj$counts, unit = "fpkm", geneLength = geneLength)
+        if (!requireNamespace("zFPKM", quietly = TRUE)) {
+            stop("'zFPKM' package is required to apply zFPKM low intensity filter on the given input")
+        } else {
+            assertthat::assert_that(!is.null(geneLength),
+                                    length(geneLength) == nrow(dgeObj$counts),
+                                    msg = "geneLength must be specified and should be the same length as the number of rows in dgeObj's counts.")
+            fpkm <- convertCounts(dgeObj$counts, unit = "fpkm", geneLength = geneLength)
 
-        # Need to filter out rows filled with NaNs first before calculating zFPKM
-        idx <- complete.cases(fpkm)
-        dgeObj <- dgeObj[row = idx,]
-        fpkm <- fpkm[idx,]
-        geneLength <- geneLength[idx]
-        nan_genes <- sum(!idx)
-        if (nan_genes > 0 & verbose == TRUE) {
-            message(stringr::str_c(nan_genes, " genes with NaN FPKM values removed."))
-        }
+            # Need to filter out rows filled with NaNs first before calculating zFPKM
+            idx        <- complete.cases(fpkm)
+            dgeObj     <- dgeObj[row = idx,]
+            fpkm       <- fpkm[idx,]
+            geneLength <- geneLength[idx]
+            nan_genes  <- sum(!idx)
+            if (nan_genes > 0 & verbose) {
+                message(stringr::str_c(nan_genes, " genes with NaN FPKM values removed."))
+            }
 
-        # Calculate zFPKM
-        zfpkm <- as.matrix(zFPKM::zFPKM(as.data.frame(fpkm)))
+            # Calculate zFPKM
+            do.call("require", list("zFPKM"))
+            zfpkm <- as.matrix(do.call("zFPKM", list(as.data.frame(fpkm))))
 
-        # Create index for zFPKM >= zFPKMThreshold in fracThreshold of samples
-        idx_zfpkm <- zfpkm >= zfpkmThreshold
-        frac <- rowSums(idx_zfpkm) / ncol(idx_zfpkm)
-        fpkmidx <- frac >= sampleFraction
-        dgeObj <- subset(dgeObj, row = fpkmidx)
-        geneLength <- geneLength[fpkmidx]
+            # Create index for zFPKM >= zFPKMThreshold in fracThreshold of samples
+            idx_zfpkm  <- zfpkm >= zfpkmThreshold
+            frac       <- rowSums(idx_zfpkm) / ncol(idx_zfpkm)
+            fpkmidx    <- frac >= sampleFraction
+            dgeObj     <- subset(dgeObj, row = fpkmidx)
+            geneLength <- geneLength[fpkmidx]
 
-        if (verbose == TRUE) {
-            message(stringr::str_c(sum(fpkmidx), " of ", starting_rowcount, " genes retained by the zFPKM filter."))
+            if (verbose) {
+                message(stringr::str_c(sum(fpkmidx), " of ", starting_rowcount, " genes retained by the zFPKM filter."))
+            }
         }
     }
 
@@ -129,7 +132,7 @@ lowIntFilter <- function(dgeObj,
         tpm <- tpm[idx,]
         geneLength <- geneLength[idx]
         nan_genes <- sum(!idx)
-        if (nan_genes > 0 & verbose == TRUE) {
+        if (nan_genes > 0 & verbose) {
             message(stringr::str_c(nan_genes, " genes with NaN TPM values removed."))
         }
 
@@ -140,7 +143,7 @@ lowIntFilter <- function(dgeObj,
         dgeObj <- subset(dgeObj, row = tpmidx)
         geneLength <- geneLength[tpmidx]
 
-        if (verbose == TRUE) {
+        if (verbose) {
             message(stringr::str_c(sum(tpmidx), " of ", starting_rowcount, " genes retained by the TPM filter."))
         }
     }
@@ -158,7 +161,7 @@ lowIntFilter <- function(dgeObj,
         dgeObj <- subset(dgeObj, row = idx)
         geneLength <- geneLength[idx]
 
-        if (verbose == TRUE) {
+        if (verbose) {
             message(stringr::str_c(sum(idx), " of ", length(idx), " genes retained by the FPK filter."))
         }
     }
@@ -172,10 +175,9 @@ lowIntFilter <- function(dgeObj,
         dgeObj <- subset(dgeObj, row = idx)
         geneLength <- geneLength[idx]
 
-        if (verbose == TRUE) {
+        if (verbose) {
             message(stringr::str_c(sum(idx), " of ", length(idx), " genes retained by the low count filter."))
         }
     }
-
-    return(dgeObj)
+    dgeObj
 }

@@ -36,7 +36,8 @@
 #' @param runTopTreat Runs topTreat on the specified contrasts. (Default = FALSE)
 #' @param foldChangeThreshold Only applies to topTreat (Default = 1.5)
 #' @param runEBayes Runs eBayes after contrast.fit (Default = TRUE)
-#' @param robust eBayes robust option (Default = TRUE)
+#' @param robust eBayes robust option. 'statmod' package must be installed to perform required
+#' calculations if robust = TRUE (Default = TRUE)
 #' @param proportion Proportion of genes expected to be differentially expressed.
 #'   (used by eBayes) (Default = 0.01)
 #' @param qValue Set TRUE to include Q-values in topTable output. (Default = FALSE)
@@ -63,7 +64,7 @@
 #'                             contrastList=contrastList,
 #'                             contrastSetName = "SecondContrastSet",
 #'                             qValue = TRUE,
-#'                             IHW = TRUE,
+#'                             IHW = FALSE,
 #'                             runTopTable = TRUE,
 #'                             runTopTreat = TRUE,
 #'                             foldChangeThreshold = 1.25)
@@ -127,6 +128,11 @@ runContrasts <- function(dgeObj,
         robust = TRUE
     }
 
+    if (robust) {
+        assertthat::assert_that(requireNamespace("statmod", quietly = TRUE),
+                                msg = "'statmod' package is required to run eBayes calculations")
+    }
+
     if (any(is.null(proportion),
             !is.numeric(proportion),
             length(proportion) != 1)) {
@@ -177,7 +183,7 @@ runContrasts <- function(dgeObj,
 
     # Run eBayes
     if (runEBayes) {
-        if (verbose == TRUE) {
+        if (verbose) {
             .tsmsg(stringr::str_c("running EBayes: proportion = ", proportion))
         }
         MyFit.Contrasts = limma::eBayes(MyFit.Contrasts, robust = robust, proportion = proportion)
@@ -186,8 +192,8 @@ runContrasts <- function(dgeObj,
     }
 
     # Run topTable on each contrast and add each DF to a list
-    if (runTopTable == TRUE) {
-        if (verbose == TRUE) {
+    if (runTopTable) {
+        if (verbose) {
             .tsmsg("Running topTable...")
         }
         # Run topTable via lapply to generate a bunch of contrasts.
@@ -198,17 +204,17 @@ runContrasts <- function(dgeObj,
         # Transfer the contrast names
         names(topTableList) = names(contrastList)
 
-        if (qValue == TRUE) {
+        if (qValue) {
             topTableList <- runQvalue(topTableList)
         }
-        if (IHW == TRUE) {
+        if (IHW) {
             IHW_result <- runIHW(topTableList)
             topTableList <- IHW_result[[1]]
         }
     }
 
-    if (runTopTreat == TRUE) {
-        if (verbose == TRUE) {
+    if (runTopTreat) {
+        if (verbose) {
             .tsmsg("Running topTreat...")
         }
         # Run topTreat via lapply to generate a bunch of contrasts.
@@ -239,13 +245,14 @@ runContrasts <- function(dgeObj,
 
         # Add the topTable DFs
         listNames <- names(topTableList)
-        for (i in 1:length(topTableList))
+        for (i in 1:length(topTableList)) {
             dgeObj <- DGEobj::addItem(dgeObj,
                                       item = topTableList[[i]],
                                       itemName = listNames[[i]],
                                       itemType = "topTable",
                                       funArgs = funArgs,
                                       parent = paste(contrastSetName, "_cf", sep = ""))
+        }
     }
 
     if (runTopTreat) {
@@ -257,14 +264,14 @@ runContrasts <- function(dgeObj,
                                   parent = fitName)
 
         listNames <- names(topTreatList)
-        for (i in 1:length(topTreatList))
+        for (i in 1:length(topTreatList)) {
             dgeObj <- DGEobj::addItem(dgeObj,
                                       item = topTreatList[[i]],
                                       itemName = paste(listNames[i], "_treat", sep = ""),
                                       itemType = "topTreat",
                                       funArgs = funArgs,
                                       parent = paste(contrastSetName, "_cft", sep = ""))
+        }
     }
-
-    return(dgeObj)
+    dgeObj
 }

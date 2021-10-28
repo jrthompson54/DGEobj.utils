@@ -1,14 +1,7 @@
 ## Comments from Maintainer
 
-Resubmission Comments:
-* Analysis tests (runXYZ function testing) skipped on CRAN to reduce testing time for cran
-* Description rewritten to pass as many spelling checks as possible w/o industry-specific lingo
-* DOI link fixed
-
-Initial Submission Comments:
-* This is a new package to be added to CRAN, it contains utilities for running DE analysis 
-  in concert with the DGEobj package
-* Code Coverage is 99%
+* Resolved CRAN check notes and errors
+* Made some analysis packages suggested/optional and only required when using methods requiring them
 
 ---  
 
@@ -17,13 +10,14 @@ Initial Submission Comments:
 RStudio Server Pro (ubuntu 18.04.2)  
 
 * R 3.6.3
-* R 4.0.4
+* R 4.0.5
+* R 4.1.1
 
 Travis-CI (ubuntu 16.04.6)
 
 * R 3.6.3
 * R 4.0.2
-* R devel (2021-04-18 r80182)
+* R devel (2021-09-29 r80990)
 
 WinBuilder
 
@@ -32,7 +26,8 @@ WinBuilder
 
 RHub
 
-* devtools::check_rhub(interactive = F)
+* devtools::check_rhub(interactive = F,
+                       env_vars    = c("_R_CHECK_FORCE_SUGGESTS_" = "false"))
 
 ---  
 
@@ -53,7 +48,10 @@ devtools::check()
 **NONE**
 
 ```
-revdepcheck::cran_revdeps('DGEobj.utils', bioc = T)
+tools::package_dependencies(packages = c('DGEobj.utils'),
+                            db       = available.packages(), 
+                            reverse  = TRUE)
 
+$DGEobj.utils
 character(0)
 ```

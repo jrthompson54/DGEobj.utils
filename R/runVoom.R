@@ -29,6 +29,7 @@
 #' @param dupCorBlock Supply a block argument to trigger duplicateCorrelation. (Optional)
 #'    Should be a vector the same length as ncol with values to indicate common
 #'    group membership for duplicateCorrelation.
+#'    Also, 'statmod' package must be installed to run duplicate correlation calculations.
 #' @param runDupCorTwice Default = TRUE. Gordon Smyth recommends running duplicateCorrelation
 #'   twice. Set this to false to run duplicateCorrelation just once.
 #' @param qualityWeights Runs limma::voomWithQualityWeights if set to TRUE (Default = TRUE).
@@ -38,7 +39,9 @@
 #'    Causes quality weights to be determined on a group basis.  If omitted
 #'    limma::voomWithQualityWeights treats each sample individually.
 #' @param runEBayes Runs eBayes after lmFit. (Default = TRUE)
+#'    Note, 'statmod' package must be installed to run eBayes calculations.
 #' @param robust Used by eBayes. (Default = TRUE)
+#'    Note, 'statmod' package must be installed to run eBayes calculations.
 #' @param proportion Proportion of genes expected to be differentially expressed
 #'   (used by eBayes) (Default = 0.01) Modify the prior accordingly if the 1st pass analysis shows
 #'   a significantly higher or lower proportion of genes regulated than the default.
@@ -142,7 +145,14 @@ runVoom <- function(dgeObj,
     # Set run parameters
     dupcor <- FALSE
     if (!missing(dupCorBlock)) {
+        assertthat::assert_that(requireNamespace("statmod", quietly = TRUE),
+                                msg = "'statmod' package is required to run duplicate correlation calculations")
         dupcor <- TRUE
+    }
+
+    if (robust) {
+        assertthat::assert_that(requireNamespace("statmod", quietly = TRUE),
+                                msg = "'statmod' package is required to run eBayes calculations")
     }
 
     blockQW <- FALSE

@@ -24,7 +24,8 @@ runVoom(
 
 \item{dupCorBlock}{Supply a block argument to trigger duplicateCorrelation. (Optional)
 Should be a vector the same length as ncol with values to indicate common
-group membership for duplicateCorrelation.}
+group membership for duplicateCorrelation.
+Also, 'statmod' package must be installed to run duplicate correlation calculations.}
 
 \item{runDupCorTwice}{Default = TRUE. Gordon Smyth recommends running duplicateCorrelation
 twice. Set this to false to run duplicateCorrelation just once.}
@@ -39,9 +40,11 @@ limma::voomWithQualityWeights treats each sample individually.}
 
 \item{mvPlot}{Enables the voom mean-variance plot. (Default = TRUE)}
 
-\item{runEBayes}{Runs eBayes after lmFit. (Default = TRUE)}
+\item{runEBayes}{Runs eBayes after lmFit. (Default = TRUE)
+Note, 'statmod' package must be installed to run eBayes calculations.}
 
-\item{robust}{Used by eBayes. (Default = TRUE)}
+\item{robust}{Used by eBayes. (Default = TRUE)
+Note, 'statmod' package must be installed to run eBayes calculations.}
 
 \item{proportion}{Proportion of genes expected to be differentially expressed
 (used by eBayes) (Default = 0.01) Modify the prior accordingly if the 1st pass analysis shows
