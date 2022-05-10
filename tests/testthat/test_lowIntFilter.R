@@ -1,5 +1,5 @@
 context("DGEobj.utils - tests for lowIntFilter.R functions")
-
+skip_if_not_installed('GenomicRanges')
 
 test_that('lowIntFilter: lowIntFilter()', {
     lowIntFilter_one_test <- lowIntFilter(t_obj1, countThreshold = 10)

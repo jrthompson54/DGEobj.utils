@@ -50,6 +50,7 @@
 #' @return A DGEobj now containing designMatrix, Elist, and fit object.
 #'
 #' @examples
+#' \dontrun{
 #'    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'    for (name in names(dgeObj)[11:length(dgeObj)]) {
 #'        dgeObj <- DGEobj::rmItem(dgeObj, name)
@@ -61,6 +62,7 @@
 #'
 #'    # Note the Elist and fit objects have been added
 #'    DGEobj::inventory(dgeObj)
+#'}
 #'
 #' @importFrom limma voom lmFit eBayes voomWithQualityWeights duplicateCorrelation
 #' @importFrom stringr str_c

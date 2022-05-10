@@ -1,5 +1,6 @@
 context("DGEobj.utils - tests for extractCol.R functions")
 
+
 test_that('extractCol: extractCol()', {
     extractCol_contrastList <- getType(t_obj1, "topTable")[1:2]
     extractCol_one_test <- extractCol(extractCol_contrastList, colName = "P.Value")

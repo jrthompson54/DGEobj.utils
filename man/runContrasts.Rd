@@ -83,6 +83,7 @@ The returned DGEobj list contains the new items:
 }
 }
 \examples{
+\dontrun{
    myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 
    # Name the design matrix to be used (see inventory(myDGEobj))
@@ -105,5 +106,6 @@ The returned DGEobj list contains the new items:
                             runTopTreat = TRUE,
                             foldChangeThreshold = 1.25)
    DGEobj::inventory(myDGEobj)
+}
 
 }

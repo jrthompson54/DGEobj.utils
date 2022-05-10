@@ -1,5 +1,7 @@
 context("DGEobj.utils - tests for runVoom.R functions")
+
 skip_on_cran()
+skip_on_ci()
 skip_if_not_installed("statmod")
 
 test_that('runVoom.R: runVoom()', {

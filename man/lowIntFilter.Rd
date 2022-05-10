@@ -45,6 +45,7 @@ supported.  A gene must pass all active filters.  Not setting a threshold
 argument inactivates that threshold.
 }
 \examples{
+\dontrun{
   myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
   dim(myDGEobj)
 
@@ -60,5 +61,6 @@ argument inactivates that threshold.
                            fpkThreshold = 5,
                            sampleFraction = 0.5)
   dim(myDGEobj)
+}
 
 }

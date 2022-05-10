@@ -80,6 +80,7 @@ than once (e.g. before and after some treatment).  This calculates a within-
 subject correlation and includes this in the model.
 }
 \examples{
+\dontrun{
    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
    for (name in names(dgeObj)[11:length(dgeObj)]) {
        dgeObj <- DGEobj::rmItem(dgeObj, name)
@@ -91,5 +92,6 @@ subject correlation and includes this in the model.
 
    # Note the Elist and fit objects have been added
    DGEobj::inventory(dgeObj)
+}
 
 }

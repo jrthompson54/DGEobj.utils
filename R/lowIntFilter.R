@@ -20,6 +20,7 @@
 #' @return Same class as input object with low intensity rows removed
 #'
 #' @examples
+#' \dontrun{
 #'   myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'   dim(myDGEobj)
 #'
@@ -35,6 +36,7 @@
 #'                            fpkThreshold = 5,
 #'                            sampleFraction = 0.5)
 #'   dim(myDGEobj)
+#'}
 #'
 #' @importFrom assertthat assert_that
 #' @importFrom DGEobj getItem

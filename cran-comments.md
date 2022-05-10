@@ -1,7 +1,8 @@
 ## Comments from Maintainer
 
-* Resolved CRAN check notes and errors
-* Made some analysis packages suggested/optional and only required when using methods requiring them
+* Resolved CRAN check errors
+* Skipping examples dependent on suggested packages
+* Updated tests so that they do not fail if suggested packages are not available
 
 ---  
 
@@ -11,13 +12,13 @@ RStudio Server Pro (ubuntu 18.04.2)
 
 * R 3.6.3
 * R 4.0.5
-* R 4.1.1
+* R 4.1.3
 
-Travis-CI (ubuntu 16.04.6)
+Circle-CI
 
-* R 3.6.3
-* R 4.0.2
-* R devel (2021-09-29 r80990)
+* R 4.0.5
+* R 4.1.3
+* rocker/verse:latest
 
 WinBuilder
 
@@ -27,7 +28,7 @@ WinBuilder
 RHub
 
 * devtools::check_rhub(interactive = F,
-                       env_vars    = c("_R_CHECK_FORCE_SUGGESTS_" = "false"))
+                       env_vars    = c("_R_CHECK_DEPENDS_ONLY_" = "true"))
 
 ---  
 

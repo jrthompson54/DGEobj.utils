@@ -1,8 +1,11 @@
 context("DGEobj.utils - tests for runEdgeRNorm.R functions")
 skip_on_cran()
+skip_if_not_installed("ggplot2")
 
 
 test_that('runEdgeRNorm: runEdgeRNorm()', {
+    require(ggplot2)
+
     # data setup
     dgeobj <- t_obj1
     dgeobj <- rmItem(dgeobj, "DGEList")

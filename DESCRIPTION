@@ -1,7 +1,7 @@
 Package: DGEobj.utils
 Type:    Package
 Title:   Differential Gene Expression (DGE) Analysis Utility Toolkit
-Version: 1.0.4
+Version: 1.0.5
 Description:
     Provides a function toolkit to facilitate reproducible RNA-Seq Differential Gene Expression (DGE)
     analysis (Law (2015) <doi:10.12688/f1000research.9005.3>).  The tools include both analysis 
@@ -41,5 +41,5 @@ Suggests:
     biomaRt,
     zFPKM
 biocViews:
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 VignetteBuilder: knitr

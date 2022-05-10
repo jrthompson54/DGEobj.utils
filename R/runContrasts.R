@@ -47,6 +47,7 @@
 #' @return The DGEobj with contrast matrix, fit and topTable/topTreat dataframes added.
 #'
 #' @examples
+#' \dontrun{
 #'    myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'
 #'    # Name the design matrix to be used (see inventory(myDGEobj))
@@ -69,6 +70,7 @@
 #'                             runTopTreat = TRUE,
 #'                             foldChangeThreshold = 1.25)
 #'    DGEobj::inventory(myDGEobj)
+#'}
 #'
 #' @importFrom limma contrasts.fit eBayes makeContrasts topTable topTreat treat
 #' @importFrom DGEobj addItem getItem
