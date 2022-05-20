@@ -92,6 +92,9 @@ lowIntFilter <- function(dgeObj,
             assertthat::assert_that(!is.null(geneLength),
                                     length(geneLength) == nrow(dgeObj$counts),
                                     msg = "geneLength must be specified and should be the same length as the number of rows in dgeObj's counts.")
+
+            do.call("require", list("zFPKM"))
+
             fpkm <- convertCounts(dgeObj$counts, unit = "fpkm", geneLength = geneLength)
 
             # Need to filter out rows filled with NaNs first before calculating zFPKM
@@ -105,7 +108,6 @@ lowIntFilter <- function(dgeObj,
             }
 
             # Calculate zFPKM
-            do.call("require", list("zFPKM"))
             zfpkm <- as.matrix(do.call("zFPKM", list(as.data.frame(fpkm))))
 
             # Create index for zFPKM >= zFPKMThreshold in fracThreshold of samples

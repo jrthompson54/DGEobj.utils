@@ -23,12 +23,15 @@ using the original data but returns a DGEobj with the subset.
 TPM should be calculated on a full dataset with only low signal genes removed.
 tpm.on.subset therefore allows calculation of TPM after heavy filtering of a DGEobj.
 
-Internally, convertCounts uses edgeR::fpkm() to calculate FPKM and converts to TPM
+Internally, convertCounts uses edgeR's fpkm() to calculate FPKM and converts to TPM
 using the formula provided by [Harold Pimental](https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/).
 }
 \examples{
-   dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
+\dontrun{
+   # NOTE: Requires the edgeR package
 
-   tpm <- tpm.on.subset(dgeObj)
+   dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
+   tpm    <- tpm.on.subset(dgeObj)
+}
 
 }

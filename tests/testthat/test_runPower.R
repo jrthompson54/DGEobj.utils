@@ -1,13 +1,10 @@
 context("DGEobj.utils - tests for runPower.R functions")
-skip_on_cran()
-skip_if_not_installed("statmod")
-skip_if_not_installed("RNASeqPower")
+skip_if(setup_failed)
 skip_if_not_installed("ggplot2")
+
 
 test_that("runPower.R: runPower()", {
     require(ggplot2)
-    require(statmod)
-    require(RNASeqPower)
 
     # data setup
     designMatrix <- model.matrix(~ 0 + ReplicateGroup, getItem(t_obj1, "design"))
@@ -22,7 +19,6 @@ test_that("runPower.R: runPower()", {
     ## FALSE value
     power_plot <- runPower(countsMatrix = t_obj1$counts, designMatrix = designMatrix, includePlots = FALSE)
     expect_s3_class(power_plot, "data.frame")
-    #expect_equal(dim(power_plot), c())
 
     # with plots
     ## canvasXpress

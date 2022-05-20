@@ -3,6 +3,9 @@
 ## DGEobj R Package 
 
 ---
+### v1.0.6
+* Made ALL Bioconductor packages suggested instead of required to resolve CRAN issues/errors
+* Removal of dependence on bioconductor packages in testing due to unstable and shifting setups across CRAN tested platforms.
 
 ### v1.0.5
 * Updated tests and examples so that when suggested packages are unavailable the examples and/or tests dependent on them are not run

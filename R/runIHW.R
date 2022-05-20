@@ -33,7 +33,9 @@
 #'   "ihw." The second list element is the IHW result dataframe.
 #'
 #' @examples
-#' if (requireNamespace("IHW", quietly = TRUE)) {
+#' \dontrun{
+#'    # NOTE: Requires the IHW package
+#'
 #'    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'    contrastList <- DGEobj::getType(dgeObj, type = "topTable")
 #'    contrastList <- lapply(contrastList, dplyr::select,
@@ -42,6 +44,7 @@
 #'                           -ihw.weighted_pvalue)
 #'    colnames(contrastList[[1]])
 #'    contrastList <- runIHW(contrastList)
+#'
 #'    # note new columns added
 #'    colnames(contrastList[["contrasts"]][[1]])
 #' }
@@ -84,9 +87,11 @@ runIHW <- function(contrastList,
         assertthat::assert_that(!is.null(ttdf$P.Value),
                                 !is.null(ttdf$AveExpr),
                                 msg = "The topTable dataframes in contrastList must have both P.Value and AveExpr columns.")
+
+        do.call("require", list("IHW"))
+
         # Run IHW on one df
         # Return an ihwResult object
-        do.call("require", list("IHW"))
         IHWresult <- tryCatch({
             do.call("ihw", list(ttdf$P.Value,
                                 covariates = ttdf$AveExpr,

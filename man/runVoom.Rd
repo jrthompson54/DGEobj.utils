@@ -18,7 +18,7 @@ runVoom(
 )
 }
 \arguments{
-\item{dgeObj}{A DGEobj containing a DGEList (e.g. from runEdgeRNorm.) (Required)}
+\item{dgeObj}{A DGEobj containing a DGEList (e.g. from runEdgeRNorm) or counts (Required)}
 
 \item{designMatrixName}{Name of a design matrix within dgeObj. (Required)}
 
@@ -30,13 +30,13 @@ Also, 'statmod' package must be installed to run duplicate correlation calculati
 \item{runDupCorTwice}{Default = TRUE. Gordon Smyth recommends running duplicateCorrelation
 twice. Set this to false to run duplicateCorrelation just once.}
 
-\item{qualityWeights}{Runs limma::voomWithQualityWeights if set to TRUE (Default = TRUE).
+\item{qualityWeights}{Runs limma's voomWithQualityWeights() if set to TRUE (Default = TRUE).
 This should normally be set to TRUE.}
 
 \item{var.design}{Provide a design matrix (from model.matrix) to identify
 replicate groups (e.g. "~ ReplicateGroup") for quality weight determination.
 Causes quality weights to be determined on a group basis.  If omitted
-limma::voomWithQualityWeights treats each sample individually.}
+limma's voomWithQualityWeights() treats each sample individually.}
 
 \item{mvPlot}{Enables the voom mean-variance plot. (Default = TRUE)}
 
@@ -60,9 +60,10 @@ in the model, enable eBayes. To use contrasts.fit downstream, run eBayes
 after that step instead. eBayes should always be run last.
 }
 \details{
-Input is minimally a DGEobj containing a DGEList (typically TMM-normalized),
-and a formula (character representation).  Other arguments can invoke
-the duplicateCorrelation method and modify use of quality weights.
+Input is minimally a DGEobj containing a DGEList (which is typically TMM-normalized)
+and a formula (character representation).  If a DGEList is missing on the object the
+counts are used as-is.  Other arguments can invoke the duplicateCorrelation method and
+modify use of quality weights.
 
 Returns a DGEobj class object containing the VoomElist (voom
 output), and Fit object (lmFit output).
@@ -81,6 +82,8 @@ subject correlation and includes this in the model.
 }
 \examples{
 \dontrun{
+  # NOTE: Requires the limma package
+
    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
    for (name in names(dgeObj)[11:length(dgeObj)]) {
        dgeObj <- DGEobj::rmItem(dgeObj, name)

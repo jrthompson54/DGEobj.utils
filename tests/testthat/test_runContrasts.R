@@ -1,5 +1,5 @@
 context("DGEobj.utils - tests for runContrasts.R functions")
-skip_on_cran()
+skip_if(setup_failed)
 
 
 test_that('runContrasts.R: runContrasts()', {

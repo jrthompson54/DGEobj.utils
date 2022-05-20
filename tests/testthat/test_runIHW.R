@@ -1,6 +1,6 @@
 context("DGEobj.utils - tests for runIHW.R functions")
-skip_on_cran()
-skip_if_not_installed("IHW")
+skip_if(setup_failed)
+
 
 test_that('runIHW: runIHW()', {
     runIHW_contrastList <- getType(t_obj1, "topTable")[1:2]

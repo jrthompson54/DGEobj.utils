@@ -1,5 +1,5 @@
 context("DGEobj.utils - tests for runEdgeRNorm.R functions")
-skip_on_cran()
+skip_if(setup_failed)
 skip_if_not_installed("ggplot2")
 
 

@@ -1,4 +1,5 @@
 context("DGEobj.utils - tests for convertCounts.R functions")
+skip_if(setup_failed)
 
 
 test_that("convertCounts.R: convertCounts()", {

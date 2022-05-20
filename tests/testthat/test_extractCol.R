@@ -1,4 +1,5 @@
 context("DGEobj.utils - tests for extractCol.R functions")
+skip_if(setup_failed)
 
 
 test_that('extractCol: extractCol()', {

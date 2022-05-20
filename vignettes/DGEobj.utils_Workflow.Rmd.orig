@@ -40,6 +40,7 @@ suppressPackageStartupMessages({
 conflict_prefer("select",    "dplyr",   quiet = TRUE)
 conflict_prefer("left_join", "dplyr",   quiet = TRUE)
 conflict_prefer("rename",    "dplyr",   quiet = TRUE)
+conflict_prefer("collapse",  "dplyr",   quiet = TRUE)
 ```
 
 

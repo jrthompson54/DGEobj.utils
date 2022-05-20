@@ -1,8 +1,9 @@
 ## Comments from Maintainer
 
-* Resolved CRAN check errors
-* Skipping examples dependent on suggested packages
-* Updated tests so that they do not fail if suggested packages are not available
+* Resolved CRAN check errors, including the noSuggests
+* Some systems do show one NOTE however, as the suggested Bioconductor packages are not available for checking
+* Made all Bioconductor packages in suggests required for testing, will not run tests if any are missing
+* Also updated our process to check ALL RHub platforms, to so hopefully we do not run into unexpected issues
 
 ---  
 
@@ -13,6 +14,7 @@ RStudio Server Pro (ubuntu 18.04.2)
 * R 3.6.3
 * R 4.0.5
 * R 4.1.3
+* R 4.2.0
 
 Circle-CI
 
@@ -28,8 +30,9 @@ WinBuilder
 RHub
 
 * devtools::check_rhub(interactive = F,
-                       env_vars    = c("_R_CHECK_DEPENDS_ONLY_" = "true"))
-
+                       platforms   = c(rhub::platforms()$name),
+                       env_vars    = c("_R_CHECK_DEPENDS_ONLY_"   = "true",
+                                       "_R_CHECK_FORCE_SUGGESTS_" = "false"))
 ---  
 
 ## R CMD check results

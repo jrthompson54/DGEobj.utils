@@ -18,7 +18,7 @@
 #'    If geneLength is a matrix, the rowMeans are calculated and used.
 #' @param log Default = FALSE.  Set TRUE to return Log2 values.
 #'    Employs edgeR functions which use an prior.count of 0.25 scaled by the library size.
-#' @param normalize Default = "none". Invokes edgeR::calcNormFactors() for normalization.
+#' @param normalize Default = "none". Invokes edgeR's calcNormFactors() for normalization.
 #'    Other options are: "TMM", "RLE", "upperquartile" (uses 75th percentile), "TMMwzp" and are case-insensitive.
 #' @param prior.count Average count to be added to each observation to avoid taking log of zero.
 #'    Used only if log = TRUE. (Default dependent on method; 0 for TPM, 0.25 for CPM and FPKM)
@@ -27,24 +27,27 @@
 #' @return A matrix in the new unit space
 #'
 #' @examples
-#' # Simulate some data
-#' counts <- trunc(matrix(runif(6000, min=0, max=2000), ncol=6))
-#' geneLength <- rowMeans(counts)
+#' \dontrun{
+#'   # NOTE: Requires the edgeR package
 #'
-#' # TMM normalized Log2FPKM
-#' Log2FPKM <- convertCounts(counts,
-#'                           unit = "fpkm",
-#'                           geneLength = geneLength,
-#'                           log = TRUE,
-#'                           normalize = "tmm")
+#'   # Simulate some data
+#'   counts <- trunc(matrix(runif(6000, min=0, max=2000), ncol=6))
+#'   geneLength <- rowMeans(counts)
 #'
-#' # Non-normalized CPM (not logged)
-#' RawCPM <- convertCounts(counts,
-#'                         unit = "CPM",
-#'                         log = FALSE,
-#'                         normalize = "none")
+#'   # TMM normalized Log2FPKM
+#'   Log2FPKM <- convertCounts(counts,
+#'                             unit       = "fpkm",
+#'                             geneLength = geneLength,
+#'                             log        = TRUE,
+#'                             normalize  = "tmm")
 #'
-#' @importFrom edgeR cpm rpkm expandAsMatrix calcNormFactors DGEList
+#'   # Non-normalized CPM (not logged)
+#'   RawCPM <- convertCounts(counts,
+#'                           unit      = "CPM",
+#'                           log       = FALSE,
+#'                           normalize = "none")
+#' }
+#'
 #' @importFrom assertthat assert_that
 #' @importFrom dplyr %>%
 #'
@@ -55,6 +58,9 @@ convertCounts <- function(countsMatrix,
                           log = FALSE,
                           normalize = "none",
                           prior.count = NULL) {
+    assertthat::assert_that(requireNamespace("edgeR", quietly = TRUE),
+                            msg = "edgeR package is required to apply edgeR normalization to the given DGEobj")
+
     assertthat::assert_that(!missing(countsMatrix),
                             !is.null(countsMatrix),
                             any(c("data.frame", "matrix") %in% class(countsMatrix)),
@@ -68,6 +74,8 @@ convertCounts <- function(countsMatrix,
                             length(unit) == 1,
                             toupper(unit) %in% c("CPM", "FPKM", "FPK", "TPM"),
                             msg = "unit must be specified and must be one of 'CPM', 'FPKM', 'FPK' or 'TPM'.")
+
+    do.call("require", list("edgeR"))
 
     unit <- toupper(unit)
     if (unit %in% c('FPKM', 'TPM', 'FPK')) {
@@ -101,7 +109,6 @@ convertCounts <- function(countsMatrix,
     if (toupper(normalize) %in% c("TMMWZP")) {
         normalize <- "TMMwzp"
     }
-
 
     # Coerce countsMatrix to a matrix
     result <- countsMatrix <- as.matrix(countsMatrix)
@@ -161,7 +168,7 @@ convertCounts <- function(countsMatrix,
 #' TPM should be calculated on a full dataset with only low signal genes removed.
 #' tpm.on.subset therefore allows calculation of TPM after heavy filtering of a DGEobj.
 #'
-#' Internally, convertCounts uses edgeR::fpkm() to calculate FPKM and converts to TPM
+#' Internally, convertCounts uses edgeR's fpkm() to calculate FPKM and converts to TPM
 #' using the formula provided by [Harold Pimental](https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/).
 #'
 #' @param dgeObj A DGEobj data structure
@@ -171,20 +178,30 @@ convertCounts <- function(countsMatrix,
 #' @return A matrix of TPM values
 #'
 #' @examples
-#'    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
+#' \dontrun{
+#'    # NOTE: Requires the edgeR package
 #'
-#'    tpm <- tpm.on.subset(dgeObj)
+#'    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
+#'    tpm    <- tpm.on.subset(dgeObj)
+#' }
 #'
 #' @import DGEobj
 #' @importFrom assertthat assert_that
 #' @export
 tpm.on.subset <- function(dgeObj, applyFilter = TRUE){
+    assertthat::assert_that(requireNamespace("edgeR", quietly = TRUE),
+                            msg = "edgeR package is required to calculate FPKM and convert to TPM")
+
     assertthat::assert_that(!missing(dgeObj),
                             !is.null(dgeObj),
                             "DGEobj" %in% class(dgeObj),
                             msg = "dgeObj must be specified and should be of class 'DGEobj'.")
     assertthat::assert_that(attr(dgeObj, "level") %in% c("isoform", "gene"),
                             msg = "The level of dgeObj should be of type 'isoform' or type 'gene'.")
+
+    do.call("require", list("edgeR"))
+
+
     if (any(is.null(applyFilter),
             !is.logical(applyFilter),
             length(applyFilter) != 1)) {
@@ -249,7 +266,6 @@ tpm.on.subset <- function(dgeObj, applyFilter = TRUE){
 #'    exonLength <- dgeObj$geneData$ExonLength
 #'    tpm <- tpm.direct(counts, geneLength = exonLength)
 #'
-#' @importFrom edgeR expandAsMatrix
 #' @importFrom assertthat assert_that
 #'
 #' @export
@@ -295,22 +311,41 @@ tpm.direct <- function(countsMatrix,
     # Calculation  (fpk / colsum(fpk) ) * 10e6
     fpb <- countsMatrix / geneLength
     sumfpb <- colSums(fpb)
-    tpm <- fpb / edgeR::expandAsMatrix(sumfpb, byrow = TRUE, dim = dim(fpb)) * 1e6
+    tpm <- fpb / expandAsMatrix(sumfpb, byrow = TRUE, dim = dim(fpb)) * 1e6
 }
 
 # Helper Functions
 calcCPM <- function(countsMatrix, log, normalize, prior.count){
-    countsMatrix %>%
-        edgeR::DGEList() %>%
-        edgeR::calcNormFactors(method = normalize) %>%
-        edgeR::cpm(log = log, prior.count = prior.count)
+    tryCatch({
+        do.call("cpm",
+                list(y      = do.call("calcNormFactors",
+                                      list(object = do.call("DGEList",
+                                                            list(counts = countsMatrix)),
+                                           method = normalize)),
+                     log         = log,
+                     prior.count = prior.count))
+    },
+    error = function(e) {
+        message("Unexpected error: ", e$message, " happened during edgeR computation of CPM")
+        return(NULL)
+    })
 }
 
 calcFPKM <- function(countsMatrix, log, normalize, geneLength, prior.count){
-    countsMatrix %>%
-        edgeR::DGEList() %>%
-        edgeR::calcNormFactors(method = normalize) %>%
-        edgeR::rpkm(log = log, gene.length = geneLength, prior.count = prior.count)
+    tryCatch({
+        do.call("rpkm",
+                list(y      = do.call("calcNormFactors",
+                                      list(object = do.call("DGEList",
+                                                            list(counts = countsMatrix)),
+                                           method = normalize)),
+                     log         = log,
+                     gene.length = geneLength,
+                     prior.count = prior.count))
+    },
+    error = function(e) {
+        message("Unexpected error: ", e$message, " happened during edgeR computatin of RPKM")
+        return(NULL)
+    })
 }
 
 calcTPM <- function(countsMatrix, log, normalize, geneLength, prior.count){
@@ -326,7 +361,7 @@ calcTPM <- function(countsMatrix, log, normalize, geneLength, prior.count){
 
     # Helper function
     fpkmToTpm <- function(fpkm) {
-        colSumMat <- edgeR::expandAsMatrix(colSums(fpkm, na.rm = TRUE), byrow = TRUE, dim = dim(fpkm))
+        colSumMat <- expandAsMatrix(colSums(fpkm, na.rm = TRUE), byrow = TRUE, dim = dim(fpkm))
         fpkm / colSumMat * 1e6
     }
 
@@ -350,4 +385,39 @@ calcFPK <- function(countsMatrix, log, normalize, geneLength, prior.count){
         FPK <- log2(FPK + prior.count)
     }
     return(FPK)
+}
+
+# brought in from edgeR
+#' @importFrom methods is
+expandAsMatrix <- function(x, dim = NULL, byrow = TRUE) {
+    if (is.null(dim))
+        return(as.matrix(x))
+    if (length(dim) < 2)
+        stop("dim must be numeric vector of length 2")
+    dim <- round(dim[1:2])
+    if (any(dim < 0))
+        stop("negative dimensions not allowed")
+    dx <- dim(x)
+    if (is.null(dx)) {
+        lx <- length(x)
+        if (lx == 1)
+            return(matrix(x, dim[1], dim[2]))
+        if (lx == dim[1] & lx == dim[2])
+            return(matrix(x, dim[1], dim[2], byrow = byrow))
+        if (lx == dim[2])
+            return(matrix(x, dim[1], dim[2], byrow = TRUE))
+        if (lx == dim[1])
+            return(matrix(x, dim[1], dim[2], byrow = FALSE))
+        stop("x of unexpected length")
+    }
+    if (length(dx) < 2)
+        stop("x has less than 2 dimensions")
+    if (length(dx) > 2)
+        stop("x has more than 2 dimensions")
+    if (all(dx == dim))
+        return(as.matrix(x))
+    if (methods::is(x, "CompressedMatrix")) {
+        return(Recall(as.matrix(x), dim = dim, byrow = byrow))
+    }
+    stop("x is matrix of wrong size")
 }
