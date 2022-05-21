@@ -1,4 +1,7 @@
 context("DGEobj.utils - tests for runVoom.R functions")
+skip_if(setup_failed)
+skip_if_not_installed("statmod")
+skip_on_ci()
 skip_on_cran()
 
 
@@ -233,7 +236,7 @@ test_that('runVoom.R: runVoom()', {
                            dupCorBlock      = "abc"),
                    regexp = msg)
     expect_message(runVoom(dgeObj           = dgeObj,
-                         designMatrixName = "designMat",
-                         var.design       = "abc"),
-                 regexp = msg)
+                           designMatrixName = "designMat",
+                           var.design       = "abc"),
+                   regexp = msg)
 })

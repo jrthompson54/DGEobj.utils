@@ -39,6 +39,9 @@ Takes a DGEobj and adds a normalized DGEList object representing the result of
 edgeR normalization (calcNormFactors).
 }
 \examples{
+\dontrun{
+   # NOTE: Requires the edgeR package
+
    myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
    myDGEobj <- DGEobj::resetDGEobj(myDGEobj)
 
@@ -53,5 +56,6 @@ edgeR normalization (calcNormFactors).
                                  includePlot = TRUE)
    myDGEobj <- obj_plus_plot[[1]]
    obj_plus_plot[[2]]
+}
 
 }

@@ -40,7 +40,8 @@ contrast sets from the same initial fit.}
 
 \item{runEBayes}{Runs eBayes after contrast.fit (Default = TRUE)}
 
-\item{robust}{eBayes robust option (Default = TRUE)}
+\item{robust}{eBayes robust option. 'statmod' package must be installed to perform required
+calculations if robust = TRUE (Default = TRUE)}
 
 \item{proportion}{Proportion of genes expected to be differentially expressed.
 (used by eBayes) (Default = 0.01)}
@@ -82,6 +83,9 @@ The returned DGEobj list contains the new items:
 }
 }
 \examples{
+\dontrun{
+  # NOTE: Requires the limma and statmod packages
+
    myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 
    # Name the design matrix to be used (see inventory(myDGEobj))
@@ -99,10 +103,11 @@ The returned DGEobj list contains the new items:
                             contrastList=contrastList,
                             contrastSetName = "SecondContrastSet",
                             qValue = TRUE,
-                            IHW = TRUE,
+                            IHW = FALSE,
                             runTopTable = TRUE,
                             runTopTreat = TRUE,
                             foldChangeThreshold = 1.25)
    DGEobj::inventory(myDGEobj)
+}
 
 }

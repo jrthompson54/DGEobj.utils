@@ -24,7 +24,7 @@ If geneLength is a matrix, the rowMeans are calculated and used.}
 \item{log}{Default = FALSE.  Set TRUE to return Log2 values.
 Employs edgeR functions which use an prior.count of 0.25 scaled by the library size.}
 
-\item{normalize}{Default = "none". Invokes edgeR::calcNormFactors() for normalization.
+\item{normalize}{Default = "none". Invokes edgeR's calcNormFactors() for normalization.
 Other options are: "TMM", "RLE", "upperquartile" (uses 75th percentile), "TMMwzp" and are case-insensitive.}
 
 \item{prior.count}{Average count to be added to each observation to avoid taking log of zero.
@@ -49,21 +49,25 @@ used (because edgeR functions only accept a vector for effectiveLength).
 Note that log2 values for CPM, TPM, and FPKM employ edgeR's prior.count handling to avoid divide by zero.
 }
 \examples{
-# Simulate some data
-counts <- trunc(matrix(runif(6000, min=0, max=2000), ncol=6))
-geneLength <- rowMeans(counts)
+\dontrun{
+  # NOTE: Requires the edgeR package
 
-# TMM normalized Log2FPKM
-Log2FPKM <- convertCounts(counts,
-                          unit = "fpkm",
-                          geneLength = geneLength,
-                          log = TRUE,
-                          normalize = "tmm")
+  # Simulate some data
+  counts <- trunc(matrix(runif(6000, min=0, max=2000), ncol=6))
+  geneLength <- rowMeans(counts)
 
-# Non-normalized CPM (not logged)
-RawCPM <- convertCounts(counts,
-                        unit = "CPM",
-                        log = FALSE,
-                        normalize = "none")
+  # TMM normalized Log2FPKM
+  Log2FPKM <- convertCounts(counts,
+                            unit       = "fpkm",
+                            geneLength = geneLength,
+                            log        = TRUE,
+                            normalize  = "tmm")
+
+  # Non-normalized CPM (not logged)
+  RawCPM <- convertCounts(counts,
+                          unit      = "CPM",
+                          log       = FALSE,
+                          normalize = "none")
+}
 
 }

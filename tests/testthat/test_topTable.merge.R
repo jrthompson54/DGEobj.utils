@@ -1,4 +1,5 @@
 context("DGEobj.utils - tests for topTable.merge.R functions")
+skip_if(setup_failed)
 
 
 test_that("topTable.merge.R: topTable.merge()", {

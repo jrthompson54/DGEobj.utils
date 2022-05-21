@@ -36,7 +36,8 @@
 #' @param runTopTreat Runs topTreat on the specified contrasts. (Default = FALSE)
 #' @param foldChangeThreshold Only applies to topTreat (Default = 1.5)
 #' @param runEBayes Runs eBayes after contrast.fit (Default = TRUE)
-#' @param robust eBayes robust option (Default = TRUE)
+#' @param robust eBayes robust option. 'statmod' package must be installed to perform required
+#' calculations if robust = TRUE (Default = TRUE)
 #' @param proportion Proportion of genes expected to be differentially expressed.
 #'   (used by eBayes) (Default = 0.01)
 #' @param qValue Set TRUE to include Q-values in topTable output. (Default = FALSE)
@@ -46,6 +47,9 @@
 #' @return The DGEobj with contrast matrix, fit and topTable/topTreat dataframes added.
 #'
 #' @examples
+#' \dontrun{
+#'   # NOTE: Requires the limma and statmod packages
+#'
 #'    myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'
 #'    # Name the design matrix to be used (see inventory(myDGEobj))
@@ -63,13 +67,13 @@
 #'                             contrastList=contrastList,
 #'                             contrastSetName = "SecondContrastSet",
 #'                             qValue = TRUE,
-#'                             IHW = TRUE,
+#'                             IHW = FALSE,
 #'                             runTopTable = TRUE,
 #'                             runTopTreat = TRUE,
 #'                             foldChangeThreshold = 1.25)
 #'    DGEobj::inventory(myDGEobj)
+#'}
 #'
-#' @importFrom limma contrasts.fit eBayes makeContrasts topTable topTreat treat
 #' @importFrom DGEobj addItem getItem
 #' @importFrom assertthat assert_that
 #' @importFrom stringr str_c
@@ -88,6 +92,9 @@ runContrasts <- function(dgeObj,
                          qValue = FALSE,
                          IHW = FALSE,
                          verbose = FALSE) {
+    assertthat::assert_that(requireNamespace("limma", quietly = TRUE),
+                            msg = "limma package is required to create the contrasts.")
+
     assertthat::assert_that(!missing(dgeObj),
                             !is.null(dgeObj),
                             "DGEobj" %in% class(dgeObj),
@@ -125,6 +132,11 @@ runContrasts <- function(dgeObj,
             length(robust) != 1)) {
         warning("robust must be a singular logical value. Assigning default value TRUE")
         robust = TRUE
+    }
+
+    if (robust) {
+        assertthat::assert_that(requireNamespace("statmod", quietly = TRUE),
+                                msg = "'statmod' package is required to run eBayes calculations")
     }
 
     if (any(is.null(proportion),
@@ -166,56 +178,121 @@ runContrasts <- function(dgeObj,
                             msg = "The contrastSetName already exists in dgeObj.")
 
     funArgs <- match.call()
+    do.call("require", list("limma"))
 
     # Retrieve designMatrix & fit
     designMatrix <- DGEobj::getItem(dgeObj, designMatrixName)
     fit <- DGEobj::getItem(dgeObj, fitName)
 
     # Run the contrast fit
-    ContrastMatrix <- limma::makeContrasts(contrasts = contrastList, levels = designMatrix)
-    MyFit.Contrasts <- limma::contrasts.fit(fit, ContrastMatrix)
+    ContrastMatrix <- tryCatch({
+        do.call("makeContrasts",
+                list(contrasts = contrastList,
+                     levels    = designMatrix))
+    },
+    error = function(e) {
+        message("Unexpected error: ", e$message, " happened during limma contrast matrix creation")
+        return(NULL)
+    })
+
+    MyFit.Contrasts <- tryCatch({
+        do.call("contrasts.fit",
+                list(fit       = fit,
+                     contrasts = ContrastMatrix))
+    },
+    error = function(e) {
+        message("Unexpected error: ", e$message, " happened during limma contrast fitting from linear model")
+        return(NULL)
+    })
 
     # Run eBayes
     if (runEBayes) {
-        if (verbose == TRUE) {
+        if (verbose) {
             .tsmsg(stringr::str_c("running EBayes: proportion = ", proportion))
         }
-        MyFit.Contrasts = limma::eBayes(MyFit.Contrasts, robust = robust, proportion = proportion)
-        MyFit.Contrasts.treat = limma::treat(MyFit.Contrasts, lfc = log2(foldChangeThreshold),
-                                             robust = robust)
+
+        MyFit.Contrasts <- tryCatch({
+            do.call("eBayes",
+                    list(fit        = MyFit.Contrasts,
+                         robust     = robust,
+                         proportion = proportion))
+        },
+        error = function(e) {
+            message("Unexpected error: ", e$message, " happened during eBayes statistics computation")
+            return(NULL)
+        })
+
+        MyFit.Contrasts.treat <- tryCatch({
+            do.call("treat",
+                    list(fit        = MyFit.Contrasts,
+                         lfc        = log2(foldChangeThreshold),
+                         robust     = robust))
+        },
+        error = function(e) {
+            message("Unexpected error: ", e$message, " happened during eBayes (treat) statistics computation")
+            return(NULL)
+        })
     }
 
     # Run topTable on each contrast and add each DF to a list
-    if (runTopTable == TRUE) {
-        if (verbose == TRUE) {
+    if (runTopTable) {
+        if (verbose) {
             .tsmsg("Running topTable...")
         }
         # Run topTable via lapply to generate a bunch of contrasts.
         MyCoef <- as.list(1:length(contrastList))
-        topTableList <- lapply(MyCoef, function(x) (limma::topTable(MyFit.Contrasts, coef = x,
-                                                                    confint = T, number = Inf, p.value = 1, sort.by = "none")))
+        topTableList <- lapply(MyCoef, function(x) {
+            tryCatch({
+                do.call("topTable",
+                        list(fit     = MyFit.Contrasts,
+                             coef    = x,
+                             confint = T,
+                             number  = Inf,
+                             p.value = 1,
+                             sort.by = "none"))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened while extracting top-ranked genes from the linear model fit")
+                return(NULL)
+            })
+        })
 
         # Transfer the contrast names
         names(topTableList) = names(contrastList)
 
-        if (qValue == TRUE) {
+        if (qValue) {
             topTableList <- runQvalue(topTableList)
         }
-        if (IHW == TRUE) {
+        if (IHW) {
             IHW_result <- runIHW(topTableList)
             topTableList <- IHW_result[[1]]
         }
     }
 
-    if (runTopTreat == TRUE) {
-        if (verbose == TRUE) {
+    if (runTopTreat) {
+        if (verbose) {
             .tsmsg("Running topTreat...")
         }
         # Run topTreat via lapply to generate a bunch of contrasts.
         LFC    <- log2(foldChangeThreshold)
         MyCoef <- as.list(1:length(contrastList))
-        topTreatList = lapply(MyCoef, function(x) (limma::topTreat(MyFit.Contrasts.treat, coef = x,
-                                                                   confint = T, lfc = LFC, number = Inf, p.value = 1, sort.by = "none")))
+        topTreatList = lapply(MyCoef, function(x) {
+            tryCatch({
+                do.call("topTreat",
+                        list(fit     = MyFit.Contrasts.treat,
+                             coef    = x,
+                             confint = T,
+                             lfc     = LFC,
+                             number  = Inf,
+                             p.value = 1,
+                             sort.by = "none"))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened while extracting top-ranked genes from the linear model fit")
+                return(NULL)
+            })
+        })
+
         # Transfer the contrast names
         names(topTreatList) = names(contrastList)
     }
@@ -239,13 +316,14 @@ runContrasts <- function(dgeObj,
 
         # Add the topTable DFs
         listNames <- names(topTableList)
-        for (i in 1:length(topTableList))
+        for (i in 1:length(topTableList)) {
             dgeObj <- DGEobj::addItem(dgeObj,
                                       item = topTableList[[i]],
                                       itemName = listNames[[i]],
                                       itemType = "topTable",
                                       funArgs = funArgs,
                                       parent = paste(contrastSetName, "_cf", sep = ""))
+        }
     }
 
     if (runTopTreat) {
@@ -257,14 +335,14 @@ runContrasts <- function(dgeObj,
                                   parent = fitName)
 
         listNames <- names(topTreatList)
-        for (i in 1:length(topTreatList))
+        for (i in 1:length(topTreatList)) {
             dgeObj <- DGEobj::addItem(dgeObj,
                                       item = topTreatList[[i]],
                                       itemName = paste(listNames[i], "_treat", sep = ""),
                                       itemType = "topTreat",
                                       funArgs = funArgs,
                                       parent = paste(contrastSetName, "_cft", sep = ""))
+        }
     }
-
-    return(dgeObj)
+    dgeObj
 }

@@ -1,14 +1,9 @@
 ## Comments from Maintainer
 
-Resubmission Comments:
-* Analysis tests (runXYZ function testing) skipped on CRAN to reduce testing time for cran
-* Description rewritten to pass as many spelling checks as possible w/o industry-specific lingo
-* DOI link fixed
-
-Initial Submission Comments:
-* This is a new package to be added to CRAN, it contains utilities for running DE analysis 
-  in concert with the DGEobj package
-* Code Coverage is 99%
+* Resolved CRAN check errors, including the noSuggests
+* Some systems do show one NOTE however, as the suggested Bioconductor packages are not available for checking
+* Made all Bioconductor packages in suggests required for testing, will not run tests if any are missing
+* Also updated our process to check ALL RHub platforms, to so hopefully we do not run into unexpected issues
 
 ---  
 
@@ -17,13 +12,15 @@ Initial Submission Comments:
 RStudio Server Pro (ubuntu 18.04.2)  
 
 * R 3.6.3
-* R 4.0.4
+* R 4.0.5
+* R 4.1.3
+* R 4.2.0
 
-Travis-CI (ubuntu 16.04.6)
+Circle-CI
 
-* R 3.6.3
-* R 4.0.2
-* R devel (2021-04-18 r80182)
+* R 4.0.5
+* R 4.1.3
+* rocker/verse:latest
 
 WinBuilder
 
@@ -32,8 +29,10 @@ WinBuilder
 
 RHub
 
-* devtools::check_rhub(interactive = F)
-
+* devtools::check_rhub(interactive = F,
+                       platforms   = c(rhub::platforms()$name),
+                       env_vars    = c("_R_CHECK_DEPENDS_ONLY_"   = "true",
+                                       "_R_CHECK_FORCE_SUGGESTS_" = "false"))
 ---  
 
 ## R CMD check results
@@ -53,7 +52,10 @@ devtools::check()
 **NONE**
 
 ```
-revdepcheck::cran_revdeps('DGEobj.utils', bioc = T)
+tools::package_dependencies(packages = c('DGEobj.utils'),
+                            db       = available.packages(), 
+                            reverse  = TRUE)
 
+$DGEobj.utils
 character(0)
 ```

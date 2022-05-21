@@ -26,6 +26,9 @@
 #'   in each dataframe.
 #'
 #' @examples
+#' \dontrun{
+#'    # NOTE: Requires the qvalue package
+#'
 #'    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'    contrastList <- DGEobj::getType(dgeObj, type = "topTable")
 #'    contrastList <- lapply(contrastList, dplyr::select,
@@ -37,28 +40,45 @@
 #'
 #'    # note new columns added
 #'    colnames(contrastList[[1]])
+#' }
 #'
-#' @importFrom qvalue qvalue
 #' @importFrom assertthat assert_that
 #'
 #' @export
 runQvalue <- function(contrastList, pvalField = "P.Value", ...){
-    # Add Q-values to each topTable dataframe in contrastList
+    assertthat::assert_that(requireNamespace("qvalue", quietly = TRUE),
+                            msg = "qvalue package is required to calculate and add the qvalue to the given list of contrasts")
+
     assertthat::assert_that(!missing(contrastList),
                             !is.null(contrastList),
                             "list" %in% class(contrastList),
                             msg = "contrastList must be of class 'list'.")
 
+    do.call("require", list("qvalue"))
+
+    # Add Q-values to each topTable dataframe in contrastList
     contrastNames = names(contrastList)
 
     for (i in 1:length(contrastList)) {
         assertthat::assert_that(exists(pvalField, contrastList[[i]]),
                                 msg = "pvalField must exist as an item in contrastList.")
         p = contrastList[[i]][, pvalField]
-        q = qvalue::qvalue(p, lambda = 0, ...)
+
+        q <- tryCatch({
+            do.call("qvalue",
+                    list(p      = p,
+                         lambda = 0,
+                         ...))
+        },
+        error = function(e) {
+            message("Unexpected error: ", e$message, " happened during qvalue estimation")
+            return(NULL)
+        })
+
         # Add the q-value and lFDR columns to the topTable df
         contrastList[[i]]$Qvalue = q$qvalues
         contrastList[[i]]$qvalue.lfdr = q$lfdr
+
         # Add documentation
         attr(contrastList[[i]], "qvalue") = TRUE
     }

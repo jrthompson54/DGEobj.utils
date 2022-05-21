@@ -1,4 +1,6 @@
 context("DGEobj.utils - tests for extractCol.R functions")
+skip_if(setup_failed)
+
 
 test_that('extractCol: extractCol()', {
     extractCol_contrastList <- getType(t_obj1, "topTable")[1:2]

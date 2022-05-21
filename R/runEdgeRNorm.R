@@ -20,6 +20,9 @@
 #' @return A DGEobj with a normalized DGEList added or a list containing the normalized DGEobj and a plot
 #'
 #' @examples
+#' \dontrun{
+#'    # NOTE: Requires the edgeR package
+#'
 #'    myDGEobj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'    myDGEobj <- DGEobj::resetDGEobj(myDGEobj)
 #'
@@ -34,9 +37,9 @@
 #'                                  includePlot = TRUE)
 #'    myDGEobj <- obj_plus_plot[[1]]
 #'    obj_plus_plot[[2]]
+#' }
 #'
 #' @importFrom dplyr %>%
-#' @importFrom edgeR calcNormFactors DGEList
 #' @importFrom DGEobj addItem getItem
 #' @importFrom assertthat assert_that
 #'
@@ -46,6 +49,9 @@ runEdgeRNorm <- function(dgeObj,
                          itemName    = "DGEList",
                          includePlot = FALSE,
                          plotLabels  = NULL) {
+    assertthat::assert_that(requireNamespace("edgeR", quietly = TRUE),
+                            msg = "edgeR package is required to apply edgeR normalization to the given DGEobj")
+
     assertthat::assert_that(!missing(dgeObj),
                             !is.null(dgeObj),
                             class(dgeObj) == "DGEobj",
@@ -59,7 +65,10 @@ runEdgeRNorm <- function(dgeObj,
                             !itemName %in% names(dgeObj),
                             length(itemName) == 1,
                             msg = "itemName must be a singular, unique and not NULL character value.")
+
     funArgs <- match.call()
+    do.call("require", list("edgeR"))
+
     if (is.null(includePlot)) {
         plot_type <- "none"
     } else if (is.logical(includePlot) && length(includePlot) == 1) {
@@ -76,10 +85,16 @@ runEdgeRNorm <- function(dgeObj,
         plot_type <- "none"
     }
 
-    MyDGElist  <-  as.matrix(DGEobj::getItem(dgeObj, "counts")) %>%
-        edgeR::DGEList() %>%
-        edgeR::calcNormFactors(method = normMethod)
-
+    MyDGElist <- tryCatch({
+        do.call("calcNormFactors",
+                list(object = do.call("DGEList",
+                                      list(counts = as.matrix(DGEobj::getItem(dgeObj, "counts")))),
+                     method = normMethod))
+    },
+    error = function(e) {
+        message("Unexpected error: ", e$message, " happened during edgeR normalization of counts")
+        return(NULL)
+    })
 
     # Capture the DGEList
     itemAttr <- list(normalization = normMethod)
@@ -112,6 +127,7 @@ runEdgeRNorm <- function(dgeObj,
     if (plot_type == "canvasxpress") {
         if ("canvasXpress" %in% .packages(all.available = T)) {
             do.call("require", list("canvasXpress"))
+
             plot <- do.call("canvasXpress",
                             list(data             = as.data.frame(t(plot_data)),
                                  graphOrientation = "vertical",

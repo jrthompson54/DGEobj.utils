@@ -16,6 +16,9 @@
 #'   matrix.
 #'
 #' @examples
+#' \dontrun{
+#'    # NOTE: Requires the sva package
+#'
 #'     dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'
 #'     ###  Create a model based on surgery status, intentionally omitting the compound treatments
@@ -39,8 +42,8 @@
 #'                               overwrite = TRUE)
 #'
 #'     dgeObj <- runSVA(dgeObj, designMatrixName = "SurgeryStatusDesign")
+#' }
 #'
-#' @importFrom sva sva num.sv
 #' @importFrom assertthat assert_that
 #' @importFrom DGEobj getItem addItem
 #' @importFrom stats model.matrix as.formula
@@ -50,6 +53,8 @@ runSVA <- function(dgeObj,
                    designMatrixName,
                    n.sv,
                    method = "leek") {
+    assertthat::assert_that(requireNamespace("sva", quietly = TRUE),
+                            msg = "sva package is required to estimate and remove artifacts from high dimentional data")
 
     assertthat::assert_that(!missing(dgeObj),
                             !is.null(dgeObj),
@@ -65,6 +70,8 @@ runSVA <- function(dgeObj,
     assertthat::assert_that(tolower(method) %in% c("leek", "be"),
                             msg = "method must be one of 'leek' or 'be'.")
 
+    do.call("require", list("sva"))
+
     method <- tolower(method)
 
     # Set up a NullFormula and DesignMatrix
@@ -75,14 +82,36 @@ runSVA <- function(dgeObj,
     log2cpm <- convertCounts(dgeObj$counts, unit = "cpm", log = TRUE, normalize = "tmm")
     designMatrix <- DGEobj::getItem(dgeObj, designMatrixName)
     if (missing(n.sv)) {
-        n.sv <- sva::num.sv(log2cpm, designMatrix, method = method)
-    } else {# can't have n.sv > number of residual degrees of freedom
+        n.sv <- tryCatch({
+            do.call("num.sv",
+                    list(dat    = log2cpm,
+                         mod    = designMatrix,
+                         method = method))
+        },
+        error = function(e) {
+            message("Unexpected error: ", e$message, " happened during surrogate variable estimation")
+            return(NULL)
+        })
+    } else {
+        # can't have n.sv > number of residual degrees of freedom
         rdf <- ncol(dgeObj) - ncol(designMatrix)
         if (n.sv > rdf)
             n.sv <- rdf
     }
     tryCatch({
-        svobj <- suppressWarnings(sva::sva(log2cpm, designMatrix, NullDesignMatrix, n.sv = n.sv))
+        suppressWarnings({
+            svobj <- tryCatch({
+                do.call("sva",
+                        list(dat  = log2cpm,
+                             mod  = designMatrix,
+                             mod0 = NullDesignMatrix,
+                             n.sv = n.sv))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during reomval of artifacts from data")
+                return(NULL)
+            })
+        })
 
         # Pull out the surrogate variables
         sv <- svobj$sv

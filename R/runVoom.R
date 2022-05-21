@@ -5,9 +5,10 @@
 #' in the model, enable eBayes. To use contrasts.fit downstream, run eBayes
 #' after that step instead. eBayes should always be run last.
 #'
-#' Input is minimally a DGEobj containing a DGEList (typically TMM-normalized),
-#' and a formula (character representation).  Other arguments can invoke
-#' the duplicateCorrelation method and modify use of quality weights.
+#' Input is minimally a DGEobj containing a DGEList (which is typically TMM-normalized)
+#' and a formula (character representation).  If a DGEList is missing on the object the
+#' counts are used as-is.  Other arguments can invoke the duplicateCorrelation method and
+#' modify use of quality weights.
 #'
 #' Returns a DGEobj class object containing the VoomElist (voom
 #' output), and Fit object (lmFit output).
@@ -24,21 +25,24 @@
 #' than once (e.g. before and after some treatment).  This calculates a within-
 #' subject correlation and includes this in the model.
 #'
-#' @param dgeObj A DGEobj containing a DGEList (e.g. from runEdgeRNorm.) (Required)
+#' @param dgeObj A DGEobj containing a DGEList (e.g. from runEdgeRNorm) or counts (Required)
 #' @param designMatrixName Name of a design matrix within dgeObj. (Required)
 #' @param dupCorBlock Supply a block argument to trigger duplicateCorrelation. (Optional)
 #'    Should be a vector the same length as ncol with values to indicate common
 #'    group membership for duplicateCorrelation.
+#'    Also, 'statmod' package must be installed to run duplicate correlation calculations.
 #' @param runDupCorTwice Default = TRUE. Gordon Smyth recommends running duplicateCorrelation
 #'   twice. Set this to false to run duplicateCorrelation just once.
-#' @param qualityWeights Runs limma::voomWithQualityWeights if set to TRUE (Default = TRUE).
+#' @param qualityWeights Runs limma's voomWithQualityWeights() if set to TRUE (Default = TRUE).
 #'    This should normally be set to TRUE.
 #' @param var.design Provide a design matrix (from model.matrix) to identify
 #'    replicate groups (e.g. "~ ReplicateGroup") for quality weight determination.
 #'    Causes quality weights to be determined on a group basis.  If omitted
-#'    limma::voomWithQualityWeights treats each sample individually.
+#'    limma's voomWithQualityWeights() treats each sample individually.
 #' @param runEBayes Runs eBayes after lmFit. (Default = TRUE)
+#'    Note, 'statmod' package must be installed to run eBayes calculations.
 #' @param robust Used by eBayes. (Default = TRUE)
+#'    Note, 'statmod' package must be installed to run eBayes calculations.
 #' @param proportion Proportion of genes expected to be differentially expressed
 #'   (used by eBayes) (Default = 0.01) Modify the prior accordingly if the 1st pass analysis shows
 #'   a significantly higher or lower proportion of genes regulated than the default.
@@ -47,6 +51,9 @@
 #' @return A DGEobj now containing designMatrix, Elist, and fit object.
 #'
 #' @examples
+#' \dontrun{
+#'   # NOTE: Requires the limma package
+#'
 #'    dgeObj <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
 #'    for (name in names(dgeObj)[11:length(dgeObj)]) {
 #'        dgeObj <- DGEobj::rmItem(dgeObj, name)
@@ -58,8 +65,8 @@
 #'
 #'    # Note the Elist and fit objects have been added
 #'    DGEobj::inventory(dgeObj)
+#'}
 #'
-#' @importFrom limma voom lmFit eBayes voomWithQualityWeights duplicateCorrelation
 #' @importFrom stringr str_c
 #' @importFrom DGEobj getItem addItem
 #' @importFrom dplyr %>%
@@ -76,6 +83,9 @@ runVoom <- function(dgeObj,
                     runEBayes = TRUE,
                     robust = TRUE,
                     proportion = 0.01) {
+    assertthat::assert_that(requireNamespace("limma", quietly = TRUE),
+                            msg = "limma package is required to prepare data for linear modeling")
+
     assertthat::assert_that(!missing(dgeObj),
                             !is.null(dgeObj),
                             "DGEobj" %in% class(dgeObj),
@@ -86,12 +96,17 @@ runVoom <- function(dgeObj,
                             length(designMatrixName) == 1,
                             designMatrixName %in% names(dgeObj),
                             msg = "designMatrixName must be specified and must be one of the items in dgeObj. Use names(dgeObj) to check for available options.")
-    assertthat::assert_that("DGEList" %in% DGEobj::showTypes(dgeObj)$Type,
-                            msg = "No DGEList found in dgeObj. Specify a DGEobj that contains a DGEList.")
+    assertthat::assert_that(any(c("DGEList", "counts") %in% attr(dgeObj, "type")),
+                            msg = "No counts or DGEList found in dgeObj. Specify a DGEobj that contains a DGEList or counts.")
+
+    do.call("require", list("limma"))
+
     designMatrix <- DGEobj::getItem(dgeObj, designMatrixName)
 
     if ("DGEList" %in% attr(dgeObj, "type")) {
         dgelist <- DGEobj::getItem(dgeObj, "DGEList")
+    } else {
+        dgelist <- DGEobj::getItem(dgeObj, "counts")
     }
 
     if (any(is.null(runDupCorTwice),
@@ -138,11 +153,19 @@ runVoom <- function(dgeObj,
 
     # Collect calling args for documentation
     funArgs <- match.call()
+    do.call("require", list("limma"))
 
     # Set run parameters
     dupcor <- FALSE
     if (!missing(dupCorBlock)) {
+        assertthat::assert_that(requireNamespace("statmod", quietly = TRUE),
+                                msg = "'statmod' package is required to run duplicate correlation calculations")
         dupcor <- TRUE
+    }
+
+    if (robust) {
+        assertthat::assert_that(requireNamespace("statmod", quietly = TRUE),
+                                msg = "'statmod' package is required to run eBayes calculations")
     }
 
     blockQW <- FALSE
@@ -156,66 +179,262 @@ runVoom <- function(dgeObj,
         if (!dupcor && !qualityWeights && !blockQW) {
             # Voom squeezes the variance (borrowing from other genes) to deal
             # with the heteroskedasticity problem
-            VoomElist <- limma::voom(dgelist, designMatrix, plot = mvPlot)
-            fit <- limma::lmFit(VoomElist, designMatrix)
-        } else if (!dupcor && qualityWeights && !blockQW) { # indQW analysis
-            VoomElist <- limma::voomWithQualityWeights(dgelist, designMatrix, plot = mvPlot, col = "blue")
-            fit <- limma::lmFit(VoomElist, designMatrix)
-        } else if (!dupcor && qualityWeights && blockQW) { # blockedQW analysis
-            VoomElist <- limma::voomWithQualityWeights(dgelist, designMatrix, plot = mvPlot, col = "blue", var.design = var.design)
-            fit <- limma::lmFit(VoomElist, designMatrix)
-        } else if (dupcor && !qualityWeights && !blockQW) { # dupcor_base analysis
-            VoomElist <- limma::voom(dgelist, designMatrix)
-            corfit <- limma::duplicateCorrelation(VoomElist,
-                                                  designMatrix,
-                                                  block = dupCorBlock)
+            VoomElist <- tryCatch({
+                do.call("voom",
+                        list(counts = dgelist,
+                             design = designMatrix,
+                             plot   = mvPlot))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during limma voom()")
+                return(NULL)
+            })
+
+            fit <- tryCatch({
+                do.call("lmFit",
+                        list(object = VoomElist,
+                             design = designMatrix))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during linear modeling")
+                return(NULL)
+            })
+        } else if (!dupcor && qualityWeights && !blockQW) {
+            # indQW analysis
+            VoomElist <- tryCatch({
+                do.call("voomWithQualityWeights",
+                        list(counts = dgelist,
+                             design = designMatrix,
+                             plot   = mvPlot,
+                             col    = 'blue'))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                return(NULL)
+            })
+
+            fit <- tryCatch({
+                do.call("lmFit",
+                        list(object = VoomElist,
+                             design = designMatrix))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during linear modeling")
+                return(NULL)
+            })
+        } else if (!dupcor && qualityWeights && blockQW) {
+            # blockedQW analysis
+            VoomElist <- tryCatch({
+                do.call("voomWithQualityWeights",
+                        list(counts     = dgelist,
+                             design     = designMatrix,
+                             plot       = mvPlot,
+                             col        = 'blue',
+                             var.design = var.design))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                return(NULL)
+            })
+
+            fit <- tryCatch({
+                do.call("lmFit",
+                        list(object = VoomElist,
+                             design = designMatrix))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during linear modeling")
+                return(NULL)
+            })
+        } else if (dupcor && !qualityWeights && !blockQW) {
+            # dupcor_base analysis
+            VoomElist <- tryCatch({
+                do.call("voom",
+                        list(counts = dgelist,
+                             design = designMatrix))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during limma voom()")
+                return(NULL)
+            })
+
+            corfit <- tryCatch({
+                do.call("duplicateCorrelation",
+                        list(object = VoomElist,
+                             design = designMatrix,
+                             block  = dupCorBlock))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during intra-block correlation estimation")
+                return(NULL)
+            })
+
             if (runDupCorTwice) {
-                VoomElist <- limma::voom(dgelist, designMatrix,
-                                         correlation = corfit$consensus.correlation,
-                                         plot = mvPlot)
-                corfit <- limma::duplicateCorrelation(VoomElist,
-                                                      designMatrix,
-                                                      block = dupCorBlock)
+                VoomElist <- tryCatch({
+                    do.call("voom",
+                            list(counts = dgelist,
+                                 design = designMatrix,
+                                 plot   = mvPlot))
+                },
+                error = function(e) {
+                    message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                    return(NULL)
+                })
+
+                corfit <- tryCatch({
+                    do.call("duplicateCorrelation",
+                            list(object = VoomElist,
+                                 design = designMatrix,
+                                 block  = dupCorBlock))
+                },
+                error = function(e) {
+                    message("Unexpected error: ", e$message, " happened during intra-block correlation estimation")
+                    return(NULL)
+                })
             }
-            fit <- limma::lmFit(VoomElist, designMatrix, block = dupCorBlock,
-                                correlation = corfit$consensus.correlation)
-        } else if (dupcor && qualityWeights && !blockQW) { # dupcor_indQW analysis
-            VoomElist <- limma::voomWithQualityWeights(dgelist, designMatrix)
-            corfit <- limma::duplicateCorrelation(VoomElist,
-                                                  designMatrix,
-                                                  block = dupCorBlock)
+
+            fit <- tryCatch({
+                do.call("lmFit",
+                        list(object = VoomElist,
+                             design = designMatrix,
+                             block  = dupCorBlock,
+                             correlation = corfit$consensus.correlation))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during linear modeling")
+                return(NULL)
+            })
+        } else if (dupcor && qualityWeights && !blockQW) {
+            # dupcor_indQW analysis
+            VoomElist <- tryCatch({
+                do.call("voomWithQualityWeights",
+                        list(counts     = dgelist,
+                             design     = designMatrix))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                return(NULL)
+            })
+
+            corfit <- tryCatch({
+                do.call("duplicateCorrelation",
+                        list(object = VoomElist,
+                             design = designMatrix,
+                             block  = dupCorBlock))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during intra-block correlation estimation")
+                return(NULL)
+            })
+
             if (runDupCorTwice) {
-                VoomElist <- limma::voomWithQualityWeights(dgelist, designMatrix,
-                                                           plot = mvPlot, col = "blue",
-                                                           correlation = corfit$consensus.correlation)
-                corfit <- limma::duplicateCorrelation(VoomElist,
-                                                      designMatrix,
-                                                      block = dupCorBlock)
+                VoomElist <- tryCatch({
+                    do.call("voomWithQualityWeights",
+                            list(counts     = dgelist,
+                                 design     = designMatrix,
+                                 plot       = mvPlot,
+                                 col        = "blue",
+                                 correlation = corfit$consensus.correlation))
+                },
+                error = function(e) {
+                    message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                    return(NULL)
+                })
+
+                corfit <- tryCatch({
+                    do.call("duplicateCorrelation",
+                            list(object = VoomElist,
+                                 design = designMatrix,
+                                 block  = dupCorBlock))
+                },
+                error = function(e) {
+                    message("Unexpected error: ", e$message, " happened during intra-block correlation estimation")
+                    return(NULL)
+                })
             }
-            fit <- limma::lmFit(VoomElist, designMatrix, block = dupCorBlock,
-                                correlation = corfit$consensus.correlation)
-        } else if (dupcor && qualityWeights && blockQW) { # dupcor_vdQW analysis
-            VoomElist <- limma::voomWithQualityWeights(dgelist, designMatrix,
-                                                       var.design = var.design)
-            corfit <- limma::duplicateCorrelation(VoomElist,
-                                                  designMatrix,
-                                                  block = dupCorBlock)
+
+            fit <- tryCatch({
+                do.call("lmFit",
+                        list(object = VoomElist,
+                             design = designMatrix,
+                             block  = dupCorBlock,
+                             correlation = corfit$consensus.correlation))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during linear modeling")
+                return(NULL)
+            })
+        } else if (dupcor && qualityWeights && blockQW) {
+            # dupcor_vdQW analysis
+
+            VoomElist <- tryCatch({
+                do.call("voomWithQualityWeights",
+                        list(counts     = dgelist,
+                             design     = designMatrix,
+                             var.design = var.design))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                return(NULL)
+            })
+
+            corfit <- tryCatch({
+                do.call("duplicateCorrelation",
+                        list(object = VoomElist,
+                             design = designMatrix,
+                             block  = dupCorBlock))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during intra-block correlation estimation")
+                return(NULL)
+            })
+
             if (runDupCorTwice) {
-                VoomElist <- limma::voomWithQualityWeights(dgelist, designMatrix,
-                                                           plot = mvPlot, col = "blue",
-                                                           correlation = corfit$consensus.correlation,
-                                                           var.design = var.design)
-                corfit <- limma::duplicateCorrelation(VoomElist,
-                                                      designMatrix,
-                                                      block = dupCorBlock)
+                VoomElist <- tryCatch({
+                    do.call("voomWithQualityWeights",
+                            list(counts      = dgelist,
+                                 design      = designMatrix,
+                                 plot        = mvPlot,
+                                 col         = "blue",
+                                 correlation = corfit$consensus.correlation,
+                                 var.design  = var.design))
+                },
+                error = function(e) {
+                    message("Unexpected error: ", e$message, " happened during limma voomWithQualityWeights()")
+                    return(NULL)
+                })
+
+                corfit <- tryCatch({
+                    do.call("duplicateCorrelation",
+                            list(object = VoomElist,
+                                 design = designMatrix,
+                                 block  = dupCorBlock))
+                },
+                error = function(e) {
+                    message("Unexpected error: ", e$message, " happened during intra-block correlation estimation")
+                    return(NULL)
+                })
             }
-            fit <- limma::lmFit(VoomElist, designMatrix, block = dupCorBlock,
-                                correlation = corfit$consensus.correlation)
+
+            fit <- tryCatch({
+                do.call("lmFit",
+                        list(object = VoomElist,
+                             design = designMatrix,
+                             block  = dupCorBlock,
+                             correlation = corfit$consensus.correlation))
+            },
+            error = function(e) {
+                message("Unexpected error: ", e$message, " happened during linear modeling")
+                return(NULL)
+            })
         }
 
         # Run eBayes
         if (runEBayes) {
-            fit = limma::eBayes(fit, robust = robust, proportion = proportion)
+            fit <- do.call("eBayes",
+                   list(fit        = fit,
+                        robust     = robust,
+                        proportion = proportion))
             itemAttr <- list(eBayes = TRUE)
         } else {
             itemAttr <- list(eBayes = FALSE)
@@ -224,7 +443,9 @@ runVoom <- function(dgeObj,
         if (exists("corfit")) { # Duplicate correlation was used; capture the correlation value
             cat(stringr::str_c("Duplicate Correlation = ", round(corfit$consensus.correlation, 4), "   \n"))
             attr(VoomElist, "DupCor") <- corfit$consensus.correlation
-            attr(fit, "DupCor") <- corfit$consensus.correlation
+            if (!is.null(fit)) {
+                attr(fit, "DupCor") <- corfit$consensus.correlation
+            }
         }
 
         VoomElistName = paste(designMatrixName, "_Elist", sep = "")
@@ -241,6 +462,7 @@ runVoom <- function(dgeObj,
                                 funArgs = funArgs,
                                 parent = paste(designMatrixName, "_Elist", sep = ""))
         }
+
         dgeObj <- dgeObj %>%
             DGEobj::addItem(fit, paste(designMatrixName, "_fit", sep = ""),
                             "fit",

@@ -1,7 +1,7 @@
 ---
 title: "DGEobj.utils: An Example Workflow"
 author: "John R. Thompson"
-date: "2021-04-21"
+date: "2022-05-19"
 output:
   rmarkdown::html_vignette:
     fig_caption: yes
@@ -49,8 +49,7 @@ str_c(designCol, (unique(dgeObj$design[[designCol]])))
 ```
 
 ```
-## [1] "ReplicateGroupBDL_Sora"     "ReplicateGroupBDL"          "ReplicateGroupBDL_Nint"    
-## [4] "ReplicateGroupBDL_EXT-1024" "ReplicateGroupSham"
+## [1] "ReplicateGroupBDL_Sora"     "ReplicateGroupBDL"          "ReplicateGroupBDL_Nint"     "ReplicateGroupBDL_EXT-1024" "ReplicateGroupSham"
 ```
 
 If using formulas there may be a few additional steps that may be necessary depending on the data:
@@ -271,11 +270,11 @@ The user can then use the new design matrix to incorporate the SVs into the anal
 |geneData                  |geneData      |row      |geneData_orig       |data.frame |951  |8   |2021-04-08 11:04:01 |
 |granges_orig              |granges_orig  |meta     |geneData_orig       |GRanges    |1000 |NA  |2021-04-08 11:04:01 |
 |granges                   |granges       |row      |geneData            |GRanges    |951  |NA  |2021-04-08 11:04:01 |
-|DGEList                   |DGEList       |assay    |counts              |DGEList    |951  |48  |2021-04-21 11:06:05 |
-|ReplicateGroupDesign      |designMatrix  |col      |design              |matrix     |48   |5   |2021-04-21 11:06:07 |
-|DiseaseStatusDesign       |designMatrix  |col      |design              |matrix     |48   |2   |2021-04-21 11:06:07 |
-|DiseaseStatusDesign_svobj |svobj         |meta     |DiseaseStatusDesign |list       |4    |NA  |2021-04-21 11:06:07 |
-|DiseaseStatusDesign_sva   |designMatrix  |col      |DiseaseStatusDesign |matrix     |48   |3   |2021-04-21 11:06:07 |
+|DGEList                   |DGEList       |assay    |counts              |DGEList    |951  |48  |2022-05-19 14:23:33 |
+|ReplicateGroupDesign      |designMatrix  |col      |design              |matrix     |48   |5   |2022-05-19 14:23:33 |
+|DiseaseStatusDesign       |designMatrix  |col      |design              |matrix     |48   |2   |2022-05-19 14:23:34 |
+|DiseaseStatusDesign_svobj |svobj         |meta     |DiseaseStatusDesign |list       |4    |NA  |2022-05-19 14:23:34 |
+|DiseaseStatusDesign_sva   |designMatrix  |col      |DiseaseStatusDesign |matrix     |48   |3   |2022-05-19 14:23:34 |
 
 
 
@@ -326,8 +325,7 @@ print(colnames(dgeObj$ReplicateGroupDesign))
 ```
 
 ```
-## [1] "ReplicateGroupSham"         "ReplicateGroupBDL"          "ReplicateGroupBDL_EXT.1024"
-## [4] "ReplicateGroupBDL_Nint"     "ReplicateGroupBDL_Sora"
+## [1] "ReplicateGroupSham"         "ReplicateGroupBDL"          "ReplicateGroupBDL_EXT.1024" "ReplicateGroupBDL_Nint"     "ReplicateGroupBDL_Sora"
 ```
 
 ```r
@@ -359,17 +357,17 @@ kable(inventory(dgeObj))
 |geneData                    |geneData       |row      |geneData_orig                                    |data.frame |951  |8   |2021-04-08 11:04:01 |
 |granges_orig                |granges_orig   |meta     |geneData_orig                                    |GRanges    |1000 |NA  |2021-04-08 11:04:01 |
 |granges                     |granges        |row      |geneData                                         |GRanges    |951  |NA  |2021-04-08 11:04:01 |
-|DGEList                     |DGEList        |assay    |counts                                           |DGEList    |951  |48  |2021-04-21 11:06:05 |
-|ReplicateGroupDesign        |designMatrix   |col      |design                                           |matrix     |48   |5   |2021-04-21 11:06:07 |
-|ReplicateGroupDesign_Elist  |Elist          |assay    |DGEList             , ReplicateGroupDesign       |EList      |951  |48  |2021-04-21 11:06:11 |
-|ReplicateGroupDesign_corFit |corFit         |meta     |ReplicateGroupDesign_Elist                       |list       |3    |NA  |2021-04-21 11:06:11 |
-|ReplicateGroupDesign_fit    |fit            |row      |ReplicateGroupDesign_Elist, ReplicateGroupDesign |MArrayLM   |951  |5   |2021-04-21 11:06:11 |
-|ReplicateGroupDesign_fit_cm |contrastMatrix |meta     |ReplicateGroupDesign_fit                         |matrix     |5    |4   |2021-04-21 11:06:12 |
-|ReplicateGroupDesign_fit_cf |contrast_fit   |row      |ReplicateGroupDesign_fit                         |MArrayLM   |951  |4   |2021-04-21 11:06:12 |
-|BDL_vs_Sham                 |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2021-04-21 11:06:12 |
-|EXT1024_vs_BDL              |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2021-04-21 11:06:12 |
-|Nint_vs_BDL                 |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2021-04-21 11:06:12 |
-|Sora_vs_BDL                 |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2021-04-21 11:06:12 |
+|DGEList                     |DGEList        |assay    |counts                                           |DGEList    |951  |48  |2022-05-19 14:23:33 |
+|ReplicateGroupDesign        |designMatrix   |col      |design                                           |matrix     |48   |5   |2022-05-19 14:23:33 |
+|ReplicateGroupDesign_Elist  |Elist          |assay    |DGEList             , ReplicateGroupDesign       |EList      |951  |48  |2022-05-19 14:23:38 |
+|ReplicateGroupDesign_corFit |corFit         |meta     |ReplicateGroupDesign_Elist                       |list       |3    |NA  |2022-05-19 14:23:38 |
+|ReplicateGroupDesign_fit    |fit            |row      |ReplicateGroupDesign_Elist, ReplicateGroupDesign |MArrayLM   |951  |5   |2022-05-19 14:23:38 |
+|ReplicateGroupDesign_fit_cm |contrastMatrix |meta     |ReplicateGroupDesign_fit                         |matrix     |5    |4   |2022-05-19 14:23:39 |
+|ReplicateGroupDesign_fit_cf |contrast_fit   |row      |ReplicateGroupDesign_fit                         |MArrayLM   |951  |4   |2022-05-19 14:23:39 |
+|BDL_vs_Sham                 |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2022-05-19 14:23:39 |
+|EXT1024_vs_BDL              |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2022-05-19 14:23:39 |
+|Nint_vs_BDL                 |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2022-05-19 14:23:39 |
+|Sora_vs_BDL                 |topTable       |row      |ReplicateGroupDesign_fit_cf                      |data.frame |951  |13  |2022-05-19 14:23:39 |
 
 After executing runContrasts, the topTable dataframes are present in the DGEobj and the DGE analysis is complete.
 

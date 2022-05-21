@@ -7,21 +7,25 @@
 rsqCalc(normMatrix, fit)
 }
 \arguments{
-\item{normMatrix}{A normalized log2cpm matrix.}
+\item{normMatrix}{A normalized log2cpm matrix}
 
-\item{fit}{A MArrayLM object from limma::lmFit.}
+\item{fit}{A MArrayLM object from limma's lmFit()}
 }
 \value{
 A vector of R-squared values for each gene fit.
 }
 \description{
-Takes a Log2CPM numeric matrix and MArrayLM fit object from limma::lmFit
+Takes a Log2CPM numeric matrix and MArrayLM fit object from limma's lmFit()
 and calculates R-squared for each gene fit.
 }
 \examples{
+\dontrun{
+   # NOTE: Requires the edgeR package
+
    dgeObj    <- readRDS(system.file("exampleObj.RDS", package = "DGEobj"))
    log2cpm   <- convertCounts(dgeObj$counts, unit = "cpm", log=TRUE, normalize = "tmm")
    fitObject <- dgeObj$ReplicateGroupDesign_fit
    rsq       <- rsqCalc (log2cpm, fitObject)
+}
 
 }

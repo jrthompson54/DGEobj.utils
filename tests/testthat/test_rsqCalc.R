@@ -1,4 +1,5 @@
 context("DGEobj.utils - tests for rsqCalc.R functions")
+skip_if(setup_failed)
 
 
 test_that("rsqCalc.R: rsqCalc()", {
